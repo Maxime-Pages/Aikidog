@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-</form><head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome Page</title>
@@ -34,6 +34,10 @@
         }
         form {
             margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap;
         }
         form input {
             padding: 10px;
@@ -61,22 +65,36 @@
             gap: 10px;
         }
     </style>
+    <script>
+        function sendCommand(command) {
+            fetch('/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => response.json())
+            .then(data => alert('Received response: ' + data.response))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 </head>
 <body>
     <h1>Dog Controls</h1>
-    <form action="/query" method="get"></form>
+    <form onsubmit="event.preventDefault(); sendCommand(JSON.stringify({ command: this.command.value })); this.command.value = '';">
         <input type="text" name="command" placeholder="Send command to the dog">
         <button type="submit">🚀</button>
-        <button type="button">🎙️</button>
+        <button type="button" onclick="sendCommand('')">🎙️</button>
     </form>
-    <div class="controls"></div>
-        <button class="button" style="margin-bottom: 10px;">⬆️</button>
+    <div class="controls">
+        <button class="button" style="margin-bottom: 10px;" onclick="sendCommand('forward')">⬆️</button>
         <div>
-            <button class="button">⬅️</button>
-            <button class="button">🔃</button>
-            <button class="button">➡️</button>
+            <button class="button" onclick="sendCommand('turn left')">⬅️</button>
+            <button class="button" onclick="sendCommand('shake head')">🔃</button>
+            <button class="button" onclick="sendCommand('turn right')">➡️</button>
         </div>
-        <button class="button">⬇️</button>
+        <button class="button" onclick="sendCommand('backward')">⬇️</button>
     </div>
 </body>
 </html>
