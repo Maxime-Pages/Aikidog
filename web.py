@@ -4,6 +4,31 @@ from scipy.stats import pearsonr
 
 app = Flask(__name__)
 
+
+commands = [
+    "stand",
+    "sit",
+    "lie",
+    "lie_with_hands_out",
+    "forward",
+    "backward",
+    "turn_left",
+    "turn_right",
+    "trot",
+    "stretch",
+    "push_up",
+    "doze_off",
+    "nod_lethargy",
+    "shake_head",
+    "tilting_head_left",
+    "tilting_head_right",
+    "tilting_head",
+    "head_bark",
+    "wag_tail",
+    "head_up_down",
+    "half_sit",
+    ]
+
 def matchcommand(command, actions, threshold=0.50):
     texts = [command] + actions
     vect = TfidfVectorizer()
@@ -24,7 +49,8 @@ def matchcommand(command, actions, threshold=0.50):
 
 @app.route('/')
 def index():
-    return ""
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8080,debug=True)
+    

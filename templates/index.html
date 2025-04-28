@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+</form><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #212223;
+            color: #eeeeee;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        h1 {
+            color: #4caf50;
+            font-size: 2.5em;
+        }
+        .button {
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        form {
+            margin-top: 20px;
+        }
+        form input {
+            padding: 10px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form button {
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls div {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dog Controls</h1>
+    <form action="/query" method="get"></form>
+        <input type="text" name="command" placeholder="Send command to the dog">
+        <button type="submit">🚀</button>
+        <button type="button">🎙️</button>
+    </form>
+    <div class="controls"></div>
+        <button class="button" style="margin-bottom: 10px;">⬆️</button>
+        <div>
+            <button class="button">⬅️</button>
+            <button class="button">🔃</button>
+            <button class="button">➡️</button>
+        </div>
+        <button class="button">⬇️</button>
+    </div>
+</body>
+</html>
