@@ -2,9 +2,11 @@ from flask import Flask, render_template, request
 from sklearn.feature_extraction.text import TfidfVectorizer
 from scipy.stats import pearsonr
 from pidog import Pidog
+from time import sleep
 
 app = Flask(__name__)
-
+my_dog = Pidog(head_init_angles=[0, 0, -30])
+sleep(1)
 
 commands = [
     "stand",
@@ -55,15 +57,13 @@ def index():
 @app.route('/command', methods=['POST'])
 def command():
     command = request.json.get('command', '')
+    print(f"Received command: {command}")
     action = matchcommand(command, commands)
     if action:
+        print(f"Executing action: {action[0]['action']}")
         my_dog.do_action(action[0]['action'])
         return action[0]['action']
     return "No matching action found"
 
 if __name__ == '__main__':
-    try:
-        my_dog = Pidog(head_init_angles=[0, 0, -30])
-        app.run(host='0.0.0.0',port=8080,debug=True)
-    finally:
-        my_dog.close()
+    app.run(host='0.0.0.0',port=8080,debug=True)
