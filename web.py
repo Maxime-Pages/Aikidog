@@ -8,32 +8,35 @@ app = Flask(__name__)
 my_dog = Pidog(head_init_angles=[0, 0, -30])
 sleep(1)
 
-commands = [
-    "stand",
-    "sit",
-    "lie",
-    "lie_with_hands_out",
-    "forward",
-    "backward",
-    "turn_left",
-    "turn_right",
-    "trot",
-    "stretch",
-    "push_up",
-    "doze_off",
-    "nod_lethargy",
-    "shake_head",
-    "tilting_head_left",
-    "tilting_head_right",
-    "tilting_head",
-    "head_bark",
-    "wag_tail",
-    "head_up_down",
-    "half_sit",
-    ]
 
-def matchcommand(command, actions, threshold=0.50):
-    texts = [command] + actions
+
+def matchcommand(command,threshold=0.20):
+    texts = [
+        command,
+        "stand",
+        "sit",
+        "lie",
+        "lie_with_hands_out",
+        "forward",
+        "backward",
+        "turn_left",
+        "turn_right",
+        "trot",
+        "stretch",
+        "push_up",
+        "doze_off",
+        "nod_lethargy",
+        "shake_head",
+        "tilting_head_left",
+        "tilting_head_right",
+        "tilting_head",
+        "head_bark",
+        "wag_tail",
+        "head_up_down",
+        "half_sit",
+    ]
+    print(f"Command: {command}")
+    print(f"Texts: {texts}")
     vect = TfidfVectorizer()
     tfidfg_mat = vect.fit_transform(texts).toarray()
 
@@ -44,6 +47,7 @@ def matchcommand(command, actions, threshold=0.50):
 
     for id, document_tf_idf in enumerate(corpus):
         pearson_corr, _ = pearsonr(query_tf_idf, document_tf_idf)
+        print(f"Pearson correlation for {texts[id+1]}: {pearson_corr}")
         if pearson_corr > threshold:
             result = {"ID": id, "action": texts[id+1], "similarity": float(pearson_corr)}
             results.append(result)
@@ -58,7 +62,8 @@ def index():
 def command():
     command = request.json.get('command', '')
     print(f"Received command: {command}")
-    action = matchcommand(command, commands)
+    command = command.replace(" ", "_").lower()
+    action = matchcommand(command)
     if action:
         print(f"Executing action: {action[0]['action']}")
         my_dog.do_action(action[0]['action'])
