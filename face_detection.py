@@ -1,118 +1,95 @@
 import cv2
-import sys
+import numpy as np
+import os
+from pathlib import Path
+import threading
+import queue
+import time
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing as mp
+from deepface import DeepFace
+# load deepface model
+model = DeepFace.build_model("Facenet512")
+def detect_faces(cap):
+    last_face_pos = None  # "left", "right", or None
+    disappearance_dir = None
+    face_disappeared_counter = 0  # to add a delay before declaring disappearance
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+        
+        frame_height, frame_width = frame.shape[:2]
+        frame_center_x = frame_width // 2
+        
+        try:
+            results = DeepFace.extract_faces(frame, detector_backend='opencv', enforce_detection=False)
+            face_found = False
+
+            if results:
+                for face in results:
+                    region = face.get("facial_area", face.get("region", {}))
+                    x, y, w, h = region.get("x", 0), region.get("y", 0), region.get("w", 0), region.get("h", 0)
+
+                    if w >= 0.9 * frame_width and h >= 0.9 * frame_height:
+                        print("Skipped false positive (full image size).")
+                        continue
+
+                    # Determine face center
+                    face_center_x = x + w // 2
+                    position = "left" if face_center_x < frame_center_x else "right"
+
+                    if last_face_pos != position:
+                        print(f"Face moved to the {position}.")
+                    last_face_pos = position
+                    disappearance_dir = None  # reset disappearance direction if face is found
+                    face_disappeared_counter = 0  # reset disappearance counter
+
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.putText(frame, f"Face: {position}", (x, y - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                    face_img = frame[y:y + h, x:x + w]
+                    cv2.imshow("Face", face_img)
+
+                    face_found = True
+                    break  # Only track first valid face
+
+            if not face_found:
+                face_disappeared_counter += 1
+                if face_disappeared_counter >= 5 and last_face_pos:
+                    disappearance_dir = last_face_pos
+                    print(f"Face disappeared to the {disappearance_dir}.")
+                    last_face_pos = None  # Reset so it doesn't repeat
+
+            cv2.imshow("Video", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        except Exception as e:
+            print(f"Error in face detection: {e}")
+
 
 def main():
-    # Load the pre-trained Haar cascade classifiers for face detection
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
-    
-    # Check if the cascade files were loaded successfully
-    if face_cascade.empty():
-        print("Error: Could not load frontal face cascade classifier")
-        return
-    
-    if profile_cascade.empty():
-        print("Error: Could not load profile face cascade classifier")
-        return
-    
-    # Initialize video capture (0 for default camera)
+    print("Starting face detection...")
+    # get stream from webcam
     cap = cv2.VideoCapture(0)
-    # Camera Settings
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
-    
-    # Check if camera opened successfully
     if not cap.isOpened():
-        print("Error: Could not open camera")
+        print("Error: Could not open webcam.")
         return
-    
-    # Set camera resolution (optional)
+    # auto focus
+    cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+    cap.set(cv2.CAP_PROP_FOCUS, 0)
+    # set resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    # auto exposure
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
     
-    print("Press 'q' to quit, 's' to save current frame")
-    
-    frame_count = 0
-    
-    while True:
-        # Capture frame-by-frame
-        ret, frame = cap.read()
-        
-        if not ret:
-            print("Error: Failed to capture frame")
-            break
-        
-        # Convert frame to grayscale (face detection works better on grayscale)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-        # Detect frontal faces in the frame
-        frontal_faces = face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,      # How much the image size is reduced at each scale
-            minNeighbors=5,       # How many neighbors each face should have to be valid
-            minSize=(20, 20),     # Minimum possible face size
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        
-        # Detect profile faces in the frame
-        profile_faces = profile_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(20, 20),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        
-        # Draw rectangles around detected frontal faces
-        for (x, y, w, h) in frontal_faces:
-            # Draw rectangle around face (green for frontal)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            
-            # Add text label
-            cv2.putText(frame, 'Frontal', (x, y - 10), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        
-        # Draw rectangles around detected profile faces
-        for (x, y, w, h) in profile_faces:
-            # Draw rectangle around face (blue for profile)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            
-            # Add text label
-            cv2.putText(frame, 'Profile', (x, y - 10), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
-        
-        # Calculate total faces detected
-        total_faces = len(frontal_faces) + len(profile_faces)
-        
-        # Display number of faces detected
-        face_count_text = f'Total faces: {total_faces} (Frontal: {len(frontal_faces)}, Profile: {len(profile_faces)})'
-        cv2.putText(frame, face_count_text, (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        # Display FPS (optional)
-        fps_text = f'Frame: {frame_count}'
-        cv2.putText(frame, fps_text, (10, 60), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        
-        # Display the resulting frame
-        cv2.imshow('Face Detection - Frontal & Profile', frame)
-        
-        # Handle key presses
-        key = cv2.waitKey(1) & 0xFF
-        
-        if key == ord('q'):
-            break
-        elif key == ord('s'):
-            # Save current frame
-            filename = f'face_detection_frame_{frame_count}.jpg'
-            cv2.imwrite(filename, frame)
-            print(f'Frame saved as {filename}')
-        
-        frame_count += 1
-    
-    # Clean up
-    cap.release()
-    cv2.destroyAllWindows()
-    print("Face detection stopped")
+    # call function to detect faces
+    detect_faces(cap)
 
 if __name__ == "__main__":
-        main()
+    main()
