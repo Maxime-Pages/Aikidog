@@ -1,4 +1,5 @@
 import requests
+import json
 
 def analyse_sentiment(text):
     url = "http://52.47.99.5:5000/predict"
@@ -40,13 +41,16 @@ def search(text):
         print(f"Error during request: {e}")
         return None
 
-def main():
+def get_response():
     text = input(">")
     sentiment = analyse_sentiment(text)
     answer = search(text)
-    if sentiment is not None:
-        print(f'Emotion: {sentiment}')
-    if answer is not None:
-        print(f'Answer: {answer}')
-
-main()
+    if sentiment is not None and answer is not None:
+        dct = {
+            "sentiment": sentiment,
+            "answer": answer
+        }
+    else:
+        dct = {"Error": "no response"}
+    result = json.dumps(dct)
+    return result

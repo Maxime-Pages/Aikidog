@@ -4,13 +4,12 @@ from scipy.stats import pearsonr
 from pidog import Pidog
 from time import sleep
 import speechrecognition as sr
+import endpoints
 
 app = Flask(__name__)
 my_dog = Pidog(head_init_angles=[0, 0, -30])
 sleep(1)
 amazon_url = "https://www.amazon.com/dp/B0C5Z3K6XG?ref=myi_title_dp"
-
-
 
 def matchcommand(command,threshold=0.20):
     texts = [
@@ -84,7 +83,7 @@ def listen():
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
         text = recognizer.recognize_google(audio)
-        answer = getresponse(text)
+        answer = endpoints.get_response(text)
         return answer
 
 
