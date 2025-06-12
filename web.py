@@ -83,7 +83,7 @@ def listen():
     with sr.Microphone(chunk_size=8192) as source:
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
-        text = r.recognize_google(audio)
+        text = recognizer.recognize_google(audio)
         answer = getresponse(text)
         return answer
 
